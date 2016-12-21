@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% load mytag %}
+{% block page_name %}Nodes{% endblock %}
+
+{% block content %}
+<div class="table-responsive">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>CPU</th>
+                <th>Mem</th>
+                <th>OutOfDisk</th>
+                <th>MemoryPressure</th>
+                <th>DiskPressure</th>
+                <th>Ready</th>
+                <th>CreateTime</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for node in data %}
+            <tr>
+                <td>{{ node.metadata.name }}</td>
+                <td>{{ node.status.allocatable.cpu }}</td>
+                <td>{{ node.status.allocatable.memory }}</td>
+                {% for d in node.status.conditions %}
+                    <td>{{ d.status }}</td>
+                {% endfor %}
+                <td>{{ node.metadata.creationTimestamp }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endblock %}
