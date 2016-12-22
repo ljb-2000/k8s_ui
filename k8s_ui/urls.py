@@ -20,6 +20,7 @@ urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
     url(r'^accounts/login/$', 'app.views.login_auth',name='login'),
     url(r'^index/$', 'app.views.index',name='index'),
+    url(r'^$', 'app.views.index',name='index_'),
     url(r'^nodes/$', 'app.views.nodes',name='nodes'),
     url(r'^namespaces/$', 'app.views.namespaces',name='namespaces'),
     url(r'^repository/$', 'app.views.repository',name='repository'),
