@@ -1,12 +1,13 @@
 # coding=utf8
 from __future__ import division
-from django.shortcuts import render
+from django.shortcuts import render,HttpResponse
 from django.http import HttpResponseRedirect
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
-import kubernetes_api
-import registry_api
+from models import Project
+import kubernetes_api , registry_api , jenkins_api
+
 import sys
 reload(sys)
 sys.setdefaultencoding('utf8')
@@ -111,3 +112,60 @@ def pods(request):
                 p['images'] += "%s</br>" % con['image']
             data.append(p)
         return render(request, 'pods.html', {'data': data})
+
+
+@login_required()
+def replicationcontroller(request):
+    namespace = request.session['namespace']
+    info = kubernetes_api.get_replicationcontroller(namespace)
+    data = []
+    for rc in info['items']:
+        r = {}
+        r['readyReplicas'] = rc['status']['readyReplicas']
+        r['replicas'] = rc['status']['replicas']
+        r['selector'] = rc['spec']['selector']
+        r['name'] = rc['metadata']['name']
+        r['creationTimestamp'] = rc['metadata']['creationTimestamp']
+        data.append(r)
+    return render(request, 'rc.html', {'data': data})
+
+
+@login_required()
+def project(request):
+    if request.method == 'POST':
+        name = request.POST['name']
+        use_rc = request.POST['use_rc']
+        jenkins_job_name = request.POST['jenkins_job_name']
+        description = request.POST['des']
+        if Project.objects.create(name = name, use_rc = use_rc, jenkins_job_name = jenkins_job_name, description = description):
+            messages.success(request, "Create project %s success" % name)
+        else:
+            messages.error(request, "Create project %s failed" % name)
+        return HttpResponseRedirect(request.META['HTTP_REFERER'])
+    if request.method == 'GET':
+        if request.GET['action'] == 'list_project':
+            data = Project.objects.all()
+            all_rc_info = kubernetes_api.get_replicationcontroller('All')
+            rcs = []
+            for rc in all_rc_info['items']:
+                rcs.append("%s (%s)" % (rc['metadata']['name'], rc['metadata']['namespace']))
+            return render(request, 'project.html', {'data': data, 'rcs': rcs, 'all_jenkins_jobs': jenkins_api.get_all_jobs()})
+        if request.GET['action'] == 'delete':
+            delete_pro_id = request.GET['d_id']
+            p = Project.objects.filter(id=delete_pro_id)
+            project_name = p[0].name
+            if p:
+                messages.success(request, "Delete project %s success" % (project_name))
+                p.delete()
+            else:
+                messages.warning(request, "Delete project %s failed, No project named %s" % (project_name, project_name))
+        return HttpResponseRedirect(request.META['HTTP_REFERER'])
+
+
+@login_required()
+def jenkins(request):
+    if request.GET['action'] == 'build_image':
+        item_name = request.GET['item_name']
+        jenkins_api.build_image(item_name)
+        messages.info(request, "Start build %s" % item_name)
+        return HttpResponseRedirect(request.META['HTTP_REFERER'])

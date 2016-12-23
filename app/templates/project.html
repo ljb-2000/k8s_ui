@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+{% load mytag %}
+
+{% block ext_cs %}
+    <!-- DataTables CSS -->
+    <link href="/static/vendor/datatables-plugins/dataTables.bootstrap.css" rel="stylesheet">
+
+    <!-- DataTables Responsive CSS -->
+    <link href="/static/vendor/datatables-responsive/dataTables.responsive.css" rel="stylesheet">
+{% endblock %}
+
+{% block page_name %}Project{% endblock %}
+
+{% block content %}
+    <span style="float:right;">
+        <button type="button" class="btn btn-outline btn-primary" data-toggle="modal" data-target="#myModal">Create Project</button>
+    </span>
+    <br><br>
+    {# add project start #}
+    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="myModalLabel"><B>Create Project</B></h4>
+          </div>
+          <div class="modal-body">
+            {# FROM #}
+            <form id="form" method="post" action="{% url 'project'%}">
+                {% csrf_token %}
+                <fieldset>
+                    <div class="form-group">
+                        <label>Name</label>
+                        <input type="text" class="form-control" name="name">
+                    </div>
+                    <div class="form-group">
+                        <label>Replicationcontroller</label>
+                        <select class="form-control" name="use_rc">
+                            {% for rc in rcs %}
+                              <option value="{{ rc }}">{{ rc }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Jenkins_Job_Name</label>
+                        <select class="form-control" name="jenkins_job_name">
+                            {% for job in all_jenkins_jobs %}
+                              <option value="{{ job.fullname }}">{{ job.fullname }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <input type="text" class="form-control" name="des">
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
+                        <button class="btn btn-primary">Create</button>
+                    </div>
+                </fieldset>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+    {# add project start end #}
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            Pods List
+                        </div>
+                        <!-- /.panel-heading -->
+                        <div class="panel-body">
+                            <table width="100%" class="table table-striped table-bordered table-hover" id="dataTables-example">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Name</th>
+                                        <th>Use_RC</th>
+                                        <th>Jenkins_Job_Name</th>
+                                        <th>Description</th>
+                                        <th>Using Version</th>
+                                        <th>Latest Version</th>
+                                        <th>Latest Build Result</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {% for pro in data %}
+                                    <tr class="odd gradeX">
+                                        <td>{{ pro.id }}</td>
+                                        <td>{{ pro.name }}</td>
+                                        <td>{{ pro.use_rc }}</td>
+                                        <td>{{ pro.jenkins_job_name }}</td>
+                                        <td>{{ pro.description}}</td>
+                                        <td>{{ pro.use_rc | get_using_version }}</td>
+                                        <td>{{ pro.jenkins_job_name | get_latest_build_number }}</td>
+                                        <td>{{ pro.jenkins_job_name | get_latest_build_re }}</td>
+                                        <td></td>
+                                        <td>
+                                            <a href="{% url 'project' %}?action=delete&d_id={{ pro.id }}"><button type="button" class="btn btn-outline btn-danger">Delete</button></a>
+                                            {{ pro.jenkins_job_name | return_build_button | safe }}
+{#                                            <a href="{% url 'build_image' %}?action=build_image&item_name={{ pro.jenkins_job_name }}"><button type="button" class="btn btn-outline btn-info">Build</button></a>#}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                            <!-- /.table-responsive -->
+                        </div>
+                        <!-- /.panel-body -->
+                    </div>
+                    <!-- /.panel -->
+                </div>
+                <!-- /.col-lg-12 -->
+            </div>
+{% endblock %}
+
+{% block ext_js %}
+    <!-- DataTables JavaScript -->
+    <script src="/static/vendor/datatables/js/jquery.dataTables.min.js"></script>
+    <script src="/static/vendor/datatables-plugins/dataTables.bootstrap.min.js"></script>
+    <script src="/static/vendor/datatables-responsive/dataTables.responsive.js"></script>
+    <script>
+    $(document).ready(function() {
+        $('#dataTables-example').DataTable({
+            responsive: true
+        });
+    });
+    </script>
+{% endblock %}

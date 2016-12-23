@@ -14,12 +14,14 @@ def http_get(url):
     resp_json = json.loads(resp.read())
     return resp_json
 
+
 def http_post(url,post_data):
     post_data = json.dumps(post_data)
     req = urllib2.Request(url, post_data)
     resp = urllib2.urlopen(req)
     resp_json = json.loads(resp.read())
     return resp_json
+
 
 def get_nodes():
     data = http_get(kubernetes_apiserver + "/nodes")
@@ -33,10 +35,25 @@ def get_namespaces():
             namespaces.append(item['metadata']['namespace'])
     return namespaces
 
+
 def get_pods(namespace):
     if namespace == 'All':
         data = http_get(kubernetes_apiserver + "/pods")
     else:
-        data = http_get(kubernetes_apiserver + "/namespaces/%s/pods"%namespace)
+        data = http_get(kubernetes_apiserver + "/namespaces/%s/pods" % namespace)
     return data
 
+
+def get_replicationcontroller(namespace):
+    if namespace == 'All':
+        data = http_get(kubernetes_apiserver + "/replicationcontrollers")
+    else:
+        data = http_get(kubernetes_apiserver + "/namespaces/%s/replicationcontrollers" % namespace)
+    return data
+
+
+def get_one_replicationcontroller(namespace,rc):
+    data = http_get(kubernetes_apiserver + "/namespaces/%s/replicationcontrollers/%s" % (namespace, rc))
+    return data
+
+# print get_one_replicationcontroller('trading', 'merger')
