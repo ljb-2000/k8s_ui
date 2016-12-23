@@ -24,14 +24,20 @@
                                 <thead>
                                     <tr>
                                         <th>Repository</th>
+                                        <th>Category</th>
+                                        <th>Description</th>
                                         <th>Tags Number</th>
+                                        <th>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                {% for r,t in data.items %}
-                                    <tr class="odd gradeX">
-                                        <td>{{ r }}</td>
-                                        <td><a href="{% url 'repository' %}?action=list_tags&repository={{ r }}" target="_parent">{{ t }}</a></td>
+                                {% for r in data %}
+                                    <tr class="odd gradeX" id="{{ r.name }}_">
+                                        <td>{{ r.name }}</td>
+                                        <td></td>
+                                        <td></td>
+                                        <td><a href="{% url 'repository' %}?action=list_tags&repository={{ r.name }}" target="_parent">{{ r.len }}</a></td>
+                                        <td><button type="button" class="btn btn-outline btn-primary" onclick="edit({{ r.name }})">Edit</button></td>
                                     </tr>
                                 {% endfor %}
                                 </tbody>
@@ -57,5 +63,10 @@
             responsive: true
         });
     });
+
+    function edit(x){
+        alert(x);
+{#        document.getElementById("")#}
+    }
     </script>
 {% endblock %}

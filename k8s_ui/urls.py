@@ -25,4 +25,7 @@ urlpatterns = [
     url(r'^namespaces/$', 'app.views.namespaces',name='namespaces'),
     url(r'^repository/$', 'app.views.repository',name='repository'),
     url(r'^pods/$', 'app.views.pods',name='pods'),
+    url(r'^rc/$', 'app.views.replicationcontroller',name='rc'),
+    url(r'^project/$', 'app.views.project',name='project'),
+    url(r'^build_image/$', 'app.views.jenkins',name='build_image'),
 ]

@@ -5,7 +5,7 @@ from django.http import HttpResponseRedirect
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
-from models import Project
+from models import Project, Image, Repository
 import kubernetes_api , registry_api , jenkins_api
 
 import sys
@@ -86,9 +86,19 @@ def repository(request):
             return HttpResponseRedirect(request.META['HTTP_REFERER'])
     else:
         info = registry_api.get_all_repository_tags()
-        data = {}
+        data = []
         for key, value in info.items():
-            data[key] = len(value)
+            r = {}
+            r['name'] = key
+            r['len'] = len(value)
+            f_re = Repository.objects.filter(name=key)
+            if len(f_re) >= 1:
+                r['description'] = f_re[0]['description']
+                r['category'] = f_re[0]['category']
+            else:
+                r['description'] = ''
+                r['category'] = ''
+            data.append(r)
         return render(request, 'repository.html', {'data': data})
 
 
