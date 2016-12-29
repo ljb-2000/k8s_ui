@@ -25,9 +25,6 @@ def get_build_console_log(item_name, build_number):
 
 
 def is_or_not_in_building(item_name, build_number):
-    print "-s-"
-    print server.get_build_info(item_name, build_number)['building']
-    print "-e-"
     return server.get_build_info(item_name, build_number)['building']
 
 

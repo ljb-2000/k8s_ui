@@ -12,6 +12,43 @@
 {% block page_name %}Repository{% endblock %}
 
 {% block content %}
+    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="myModalLabel"><B>Repository Modify</B></h4>
+          </div>
+          <div class="modal-body">
+            {# FROM #}
+            <form id="form" method="post" action="{% url 'repository' %}">
+                {% csrf_token %}
+                <fieldset>
+                    <div class="form-group">
+                        <label>Name</label>
+                        <input type="text" class="form-control" name="name" id="f-name" readonly="readonly">
+                    </div>
+                    <div class="form-group">
+                        <label>Category</label>
+                        <select class="form-control" name="category" id="f-cate">
+                            <option value="base_image">Base Image</option>
+                            <option value="project_image">Project Image</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <input type="text" class="form-control" name="description" id="f-des">
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
+                        <button class="btn btn-primary">Create</button>
+                    </div>
+                </fieldset>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
             <div class="row">
                 <div class="col-lg-12">
                     <div class="panel panel-default">
@@ -32,12 +69,12 @@
                                 </thead>
                                 <tbody>
                                 {% for r in data %}
-                                    <tr class="odd gradeX" id="{{ r.name }}_">
+                                    <tr class="odd gradeX" id="{{ r.js_id }}">
                                         <td>{{ r.name }}</td>
-                                        <td></td>
-                                        <td></td>
+                                        <td>{{ r.category }}</td>
+                                        <td>{{ r.description }}</td>
                                         <td><a href="{% url 'repository' %}?action=list_tags&repository={{ r.name }}" target="_parent">{{ r.len }}</a></td>
-                                        <td><button type="button" class="btn btn-outline btn-primary" onclick="edit({{ r.name }})">Edit</button></td>
+                                        <td><button type="button" class="btn btn-outline btn-primary btn-edit" id="{{ r.js_id }}">Edit</button></td>
                                     </tr>
                                 {% endfor %}
                                 </tbody>
@@ -50,13 +87,13 @@
                 </div>
                 <!-- /.col-lg-12 -->
             </div>
+        <span style="float:right;">
+        <button type="button" id="mybutton" class="btn btn-outline btn-primary" data-toggle="modal" data-target="#myModal" style="display: none">Create Project</button>
+    </span>
 {% endblock %}
 
 {% block ext_js %}
-    <!-- DataTables JavaScript -->
-    <script src="/static/vendor/datatables/js/jquery.dataTables.min.js"></script>
-    <script src="/static/vendor/datatables-plugins/dataTables.bootstrap.min.js"></script>
-    <script src="/static/vendor/datatables-responsive/dataTables.responsive.js"></script>
+
     <script>
     $(document).ready(function() {
         $('#dataTables-example').DataTable({
@@ -64,9 +101,26 @@
         });
     });
 
-    function edit(x){
-        alert(x);
-{#        document.getElementById("")#}
-    }
+    $(document).ready(function(){
+        $(document).on('click','.btn-edit',function(){
+            console.log(1);
+            var id = $(this).attr("id");
+            var tr = $("#"+id);
+            var name = tr.find("td").eq(0).text();
+            var category = tr.find("td").eq(1).text();
+            var description = tr.find("td").eq(2).text();
+            $("#f-name").val(name);
+            if (category == "Project Image") {
+                $("#f-cate").val("project_image");
+            }
+            $("#f-des").val(description);
+            $("#mybutton").trigger("click");
+
+        });
+    });
     </script>
+    <!-- DataTables JavaScript -->
+    <script src="/static/vendor/datatables/js/jquery.dataTables.min.js"></script>
+    <script src="/static/vendor/datatables-plugins/dataTables.bootstrap.min.js"></script>
+    <script src="/static/vendor/datatables-responsive/dataTables.responsive.js"></script>
 {% endblock %}

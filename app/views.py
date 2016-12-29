@@ -7,6 +7,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from models import Project, Image, Repository
 import kubernetes_api , registry_api , jenkins_api
+import json
 
 import sys
 reload(sys)
@@ -68,38 +69,54 @@ def namespaces(request):
 
 @login_required()
 def repository(request):
-    if 'action' in request.GET and request.GET['action'] == 'list_tags':
-        repository = request.GET['repository']
-        list_ = registry_api.get_repository_tags(repository)
-        data = {}
-        for tag in list_ :
-            data[tag] = registry_api.get_tag_create_time(repository, tag)
-        return render(request, 'repository_manage.html', {'data': data, 'repository': repository})
-    elif 'action' in request.GET and request.GET['action'] == 'delete_tag':
-        repository = request.GET['repository']
-        tag = request.GET['tag']
-        if registry_api.delete_tag(repository, tag):
-            messages.success(request, "删除%s的版本%s成功" % (repository, tag))
-            return HttpResponseRedirect(request.META['HTTP_REFERER'])
-        else:
-            messages.info(request, "删除%s的版本%s失败" % (repository, tag))
-            return HttpResponseRedirect(request.META['HTTP_REFERER'])
-    else:
-        info = registry_api.get_all_repository_tags()
-        data = []
-        for key, value in info.items():
-            r = {}
-            r['name'] = key
-            r['len'] = len(value)
-            f_re = Repository.objects.filter(name=key)
-            if len(f_re) >= 1:
-                r['description'] = f_re[0]['description']
-                r['category'] = f_re[0]['category']
+    if request.method == 'GET':
+        if 'action' in request.GET and request.GET['action'] == 'list_tags':
+            repository = request.GET['repository']
+            list_ = registry_api.get_repository_tags(repository)
+            data = {}
+            for tag in list_:
+                data[tag] = registry_api.get_tag_create_time(repository, tag)
+            return render(request, 'repository_manage.html', {'data': data, 'repository': repository})
+        elif 'action' in request.GET and request.GET['action'] == 'delete_tag':
+            repository = request.GET['repository']
+            tag = request.GET['tag']
+            if registry_api.delete_tag(repository, tag):
+                messages.success(request, "删除%s的版本%s成功" % (repository, tag))
+                return HttpResponseRedirect(request.META['HTTP_REFERER'])
             else:
-                r['description'] = ''
-                r['category'] = ''
-            data.append(r)
-        return render(request, 'repository.html', {'data': data})
+                messages.info(request, "删除%s的版本%s失败" % (repository, tag))
+                return HttpResponseRedirect(request.META['HTTP_REFERER'])
+        else:
+            info = registry_api.get_all_repository_tags()
+            data = []
+            js_id = 0
+            for key, value in info.items():
+                r = {}
+                r['name'] = key
+                r['len'] = len(value)
+                js_id += 1
+                r['js_id'] = "t-%d" % js_id
+                f_re = Repository.objects.filter(name=key)
+                if len(f_re) >= 1:
+                    r['description'] = f_re[0].description
+                    r['category'] = f_re[0].category
+                else:
+                    r['description'] = ''
+                    r['category'] = ''
+                data.append(r)
+            return render(request, 'repository.html', {'data': data})
+    else:
+        category = request.POST['category']
+        description = request.POST['description']
+        repository = request.POST['name']
+        f_re = Repository.objects.filter(name = repository)
+        if len(f_re) >= 1:
+            f_re.update(category=category, description=description)
+        else:
+            f_re.create(name=repository, category=category, description=description)
+        Repository.objects.update_or_create(name=repository, category=category, description=description, defaults={'name': repository})
+        messages.success(request, "%s saved success" % repository)
+        return HttpResponseRedirect(request.META['HTTP_REFERER'])
 
 
 @login_required()
@@ -122,22 +139,39 @@ def pods(request):
                 p['images'] += "%s</br>" % con['image']
             data.append(p)
         return render(request, 'pods.html', {'data': data})
-
+    elif 'action' in request.GET and request.GET['action'] == 'pod_log':
+        namespace = request.GET['namespace']
+        podname = request.GET['podname']
+        data = kubernetes_api.get_pod_log(namespace, podname)
+        return HttpResponse("<pre>" + data + "</pre>")
 
 @login_required()
 def replicationcontroller(request):
-    namespace = request.session['namespace']
-    info = kubernetes_api.get_replicationcontroller(namespace)
-    data = []
-    for rc in info['items']:
-        r = {}
-        r['readyReplicas'] = rc['status']['readyReplicas']
-        r['replicas'] = rc['status']['replicas']
-        r['selector'] = rc['spec']['selector']
-        r['name'] = rc['metadata']['name']
-        r['creationTimestamp'] = rc['metadata']['creationTimestamp']
-        data.append(r)
-    return render(request, 'rc.html', {'data': data})
+    if 'name' in request.GET:
+        name = request.GET['name']
+        all_rc_info = kubernetes_api.get_replicationcontroller('All')
+        for rc in all_rc_info['items']:
+            if rc['metadata']['name'] == name:
+                namespace = rc['metadata']['namespace']
+                break
+        else:
+            namespace = 'default'
+        decode_json  = kubernetes_api.get_one_replicationcontroller(namespace, name)
+        json_former = json.dumps(decode_json)
+        return render(request, 'json-show.html', {'page_name': name, 'json_data': json_former})
+    else:
+        namespace = request.session['namespace']
+        info = kubernetes_api.get_replicationcontroller(namespace)
+        data = []
+        for rc in info['items']:
+            r = {}
+            r['readyReplicas'] = rc['status']['readyReplicas']
+            r['replicas'] = rc['status']['replicas']
+            r['selector'] = rc['spec']['selector']
+            r['name'] = rc['metadata']['name']
+            r['creationTimestamp'] = rc['metadata']['creationTimestamp']
+            data.append(r)
+        return render(request, 'rc.html', {'data': data})
 
 
 @login_required()

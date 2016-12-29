@@ -33,7 +33,7 @@
                                 <tbody>
                                 {% for rc in data %}
                                     <tr class="odd gradeX">
-                                        <td width="100">{{ rc.name }}</td>
+                                        <td width="100"><a href="{% url 'rc' %}?name={{ rc.name }}" target="_parent">{{ rc.name }}</a></td>
                                         <td>{{ rc.replicas }}</td>
                                         <td>{{ rc.readyReplicas }}</td>
                                         <td>{{ rc.creationTimestamp | get_cst_time }}</td>

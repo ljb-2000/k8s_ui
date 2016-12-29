@@ -58,7 +58,6 @@ def get_using_version(rc_namespace):
         namespace = m.group(2)
     else:
         return 'Get version error'
-    print rc
     data = kubernetes_api.get_one_replicationcontroller(namespace, rc)
     image_url = data['spec']['template']['spec']['containers'][0]['image']
     m = re.match(".*:(.*)",image_url)

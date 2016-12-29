@@ -11,8 +11,13 @@ kubernetes_apiserver = 'http://54.223.166.145:8081/api/v1'
 def http_get(url):
     req = urllib2.Request(url)
     resp = urllib2.urlopen(req)
-    resp_json = json.loads(resp.read())
-    return resp_json
+    response = resp.read()
+    try:
+        resp_json = json.loads(response)
+        return resp_json
+    except Exception,e:
+        print Exception,e
+        return response
 
 
 def http_post(url,post_data):
@@ -44,6 +49,19 @@ def get_pods(namespace):
     return data
 
 
+def get_pod_log(namespace,podname):
+    if namespace == 'All':
+        pods_info = http_get(kubernetes_apiserver + "/pods")
+        for pod in pods_info['items']:
+            if pod['metadata']['name'] == podname:
+                namespace = pod['metadata']['namespace']
+                break
+    data = http_get(kubernetes_apiserver + "/namespaces/%s/pods/%s/log?tailLines=100&pretty=json" % (namespace, podname))
+    print namespace
+    print data
+    return data
+
+
 def get_replicationcontroller(namespace):
     if namespace == 'All':
         data = http_get(kubernetes_apiserver + "/replicationcontrollers")
@@ -55,5 +73,3 @@ def get_replicationcontroller(namespace):
 def get_one_replicationcontroller(namespace,rc):
     data = http_get(kubernetes_apiserver + "/namespaces/%s/replicationcontrollers/%s" % (namespace, rc))
     return data
-
-# print get_one_replicationcontroller('trading', 'merger')

@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block head %}
+    <style>
+        pre {outline: 1px solid #ccc; padding: 5px; margin: 5px; }
+        .string { color: green; }
+        .number { color: darkorange; }
+        .boolean { color: blue; }
+        .null { color: magenta; }
+        .key { color: red; }
+    </style>
+{% endblock %}
+
+{% block page_name %}{{ page_name }}{% endblock %}
+
+{% block content %}
+<div>
+    <pre id="json-show">
+    </pre>
+</div>
+<div id="json-dis" style="display: none">
+{{ json_data }}
+</div>
+{% endblock %}
+{% block ext_js %}
+    <script>
+    var obj = JSON.parse($('#json-dis').text());
+    $('#json-show').html(syntaxHighlight(obj));
+    </script>
+{% endblock %}
