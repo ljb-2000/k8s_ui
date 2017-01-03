@@ -9,7 +9,7 @@
     <link href="/static/vendor/datatables-responsive/dataTables.responsive.css" rel="stylesheet">
 {% endblock %}
 
-{% block page_name %}Replicationcontroller{% endblock %}
+{% block page_name %}Deployment{% endblock %}
 
 {% block content %}
             <div class="row">
@@ -21,20 +21,21 @@
                                 <thead>
                                     <tr>
                                         <th>Name</th>
-                                        <th>Desired</th>
-                                        <th>Ready</th>
-                                        <th>Create_Time</th>
-                                        <th>Selector</th>
+                                        <th>Replicas</th>
+                                        <th>updatedReplicas</th>
+                                        <th>availableReplicas</th>
+                                        <th>CreationTime</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                {% for rc in data %}
+                                {% for dm in data %}
                                     <tr class="odd gradeX">
-                                        <td width="100"><a href="{% url 'rc' %}?name={{ rc.name }}" target="_parent">{{ rc.name }}</a></td>
-                                        <td>{{ rc.replicas }}</td>
-                                        <td>{{ rc.readyReplicas }}</td>
-                                        <td>{{ rc.creationTimestamp | get_cst_time }}</td>
-                                        <td width="100">{% for key,value in rc.selector.items %}{{ key }} => {{ value }} </br>{% endfor %}</td>
+                                        <td width="100"><a href="{% url 'dm' %}?name={{ dm.name }}" target="_parent">{{ dm.name }}</a></td>
+                                        <td>{{ dm.replicas }}</td>
+                                        <td>{{ dm.updatedReplicas }}</td>
+                                        <td>{{ dm.availableReplicas }}</td>
+                                        <td>{{ dm.creationTimestamp | get_cst_time }}</td>
+{#                                        <td width="100">{% for key,value in rc.selector.items %}{{ key }} => {{ value }} </br>{% endfor %}</td>#}
                                     </tr>
                                 {% endfor %}
                                 </tbody>

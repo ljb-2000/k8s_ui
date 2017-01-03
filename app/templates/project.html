@@ -34,10 +34,10 @@
                         <input type="text" class="form-control" name="name">
                     </div>
                     <div class="form-group">
-                        <label>Replicationcontroller</label>
-                        <select class="form-control" name="use_rc">
-                            {% for rc in rcs %}
-                              <option value="{{ rc }}">{{ rc }}</option>
+                        <label>Deployment</label>
+                        <select class="form-control" name="use_dm">
+                            {% for dm in dms %}
+                              <option value="{{ dm }}">{{ dm }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -46,6 +46,14 @@
                         <select class="form-control" name="jenkins_job_name">
                             {% for job in all_jenkins_jobs %}
                               <option value="{{ job.fullname }}">{{ job.fullname }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>repository</label>
+                        <select class="form-control" name="repository">
+                            {% for re in repository %}
+                              <option value="{{ re }}">{{ re }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -67,41 +75,37 @@
             <div class="row">
                 <div class="col-lg-12">
                     <div class="panel panel-default">
-                        <div class="panel-heading">
-                            Pods List
-                        </div>
                         <!-- /.panel-heading -->
                         <div class="panel-body">
                             <table width="100%" class="table table-striped table-bordered table-hover" id="dataTables-example">
                                 <thead>
                                     <tr>
-                                        <th>ID</th>
                                         <th>Name</th>
-                                        <th>Use_RC</th>
+                                        <th>Use_DM</th>
                                         <th>Jenkins_Job_Name</th>
-                                        <th>Description</th>
+                                        <th>repository</th>
                                         <th>Using Version</th>
                                         <th>Latest Version</th>
                                         <th>Latest Build Result</th>
+                                        <th>Description</th>
                                         <th>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                 {% for pro in data %}
                                     <tr class="odd gradeX">
-                                        <td>{{ pro.id }}</td>
                                         <td>{{ pro.name }}</td>
-                                        <td>{{ pro.use_rc }}</td>
+                                        <td>{{ pro.use_dm }}</td>
                                         <td>{{ pro.jenkins_job_name }}</td>
-                                        <td>{{ pro.description}}</td>
-                                        <td>{{ pro.use_rc | get_using_version }}</td>
+                                        <td>{{ pro.repository }}</td>
+                                        <td>{{ pro.use_dm | get_using_version }}</td>
                                         <td>{{ pro.jenkins_job_name | get_latest_build_number }}</td>
                                         <td>{{ pro.jenkins_job_name | get_latest_build_re }}</td>
-                                        <td></td>
+                                        <td>{{ pro.description}}</td>
                                         <td>
                                             <a href="{% url 'project' %}?action=delete&d_id={{ pro.id }}"><button type="button" class="btn btn-outline btn-danger">Delete</button></a>
                                             {{ pro.jenkins_job_name | return_build_button | safe }}
-{#                                            <a href="{% url 'build_image' %}?action=build_image&item_name={{ pro.jenkins_job_name }}"><button type="button" class="btn btn-outline btn-info">Build</button></a>#}
+                                            <a href="{% url 'project' %}?action=update&pro_id={{ pro.id }}"><button type="button" class="btn btn-outline btn-success">Update</button></a>
                                         </td>
                                     </tr>
                                 {% endfor %}

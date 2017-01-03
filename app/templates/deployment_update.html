@@ -9,7 +9,7 @@
     <link href="/static/vendor/datatables-responsive/dataTables.responsive.css" rel="stylesheet">
 {% endblock %}
 
-{% block page_name %}Replicationcontroller{% endblock %}
+{% block page_name %}The latest 10 tags in <font color="#008b8b">{{ repository }}</font>{% endblock %}
 
 {% block content %}
             <div class="row">
@@ -20,21 +20,17 @@
                             <table width="100%" class="table table-striped table-bordered table-hover" id="dataTables-example">
                                 <thead>
                                     <tr>
-                                        <th>Name</th>
-                                        <th>Desired</th>
-                                        <th>Ready</th>
-                                        <th>Create_Time</th>
-                                        <th>Selector</th>
+                                        <th>Tag</th>
+                                        <th>Create Time</th>
+                                        <th>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                {% for rc in data %}
+                                {% for r,t in data.items %}
                                     <tr class="odd gradeX">
-                                        <td width="100"><a href="{% url 'rc' %}?name={{ rc.name }}" target="_parent">{{ rc.name }}</a></td>
-                                        <td>{{ rc.replicas }}</td>
-                                        <td>{{ rc.readyReplicas }}</td>
-                                        <td>{{ rc.creationTimestamp | get_cst_time }}</td>
-                                        <td width="100">{% for key,value in rc.selector.items %}{{ key }} => {{ value }} </br>{% endfor %}</td>
+                                        <td>{{ r }}</td>
+                                        <td>{{ t | get_cst_time }}</td>
+                                        <td><a href="{% url 'dm' %}?action=update&repository={{ repository }}&tag={{ r }}&pro_id={{ pro_id }}"><button type="button" class="btn btn-outline btn-success">Update</button></a></td>
                                     </tr>
                                 {% endfor %}
                                 </tbody>

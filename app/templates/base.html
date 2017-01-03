@@ -148,12 +148,17 @@
                         </li>
 
                         <li>
-                            <a href="{% url 'rc' %}"><i class="glyphicon glyphicon-tasks"></i> Rc</a>
+                            <a href="{% url 'rc' %}"><i class="glyphicon glyphicon-tasks"></i> ReplicationController</a>
                         </li>
 
                         <li>
-                            <a href="{% url 'project' %}?action=list_project"><i class="glyphicon glyphicon-tasks"></i> Project</a>
+                            <a href="{% url 'dm' %}"><i class="glyphicon glyphicon-align-right"></i> Deployment</a>
                         </li>
+
+                        <li>
+                            <a href="{% url 'project' %}?action=list_project"><i class="glyphicon glyphicon-folder-open"></i> Project</a>
+                        </li>
+
                     </ul>
                 </div>
                 <!-- /.sidebar-collapse -->

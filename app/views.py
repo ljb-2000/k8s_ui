@@ -8,7 +8,7 @@ from django.contrib.auth.decorators import login_required
 from models import Project, Image, Repository
 import kubernetes_api , registry_api , jenkins_api
 import json
-
+import re
 import sys
 reload(sys)
 sys.setdefaultencoding('utf8')
@@ -158,7 +158,7 @@ def replicationcontroller(request):
             namespace = 'default'
         decode_json  = kubernetes_api.get_one_replicationcontroller(namespace, name)
         json_former = json.dumps(decode_json)
-        return render(request, 'json-show.html', {'page_name': name, 'json_data': json_former})
+        return render(request, 'json-show.html', {'page_name': "Replicationcontrollers -----> %s" % name, 'json_data': json_former})
     else:
         namespace = request.session['namespace']
         info = kubernetes_api.get_replicationcontroller(namespace)
@@ -178,10 +178,11 @@ def replicationcontroller(request):
 def project(request):
     if request.method == 'POST':
         name = request.POST['name']
-        use_rc = request.POST['use_rc']
+        use_dm = request.POST['use_dm']
         jenkins_job_name = request.POST['jenkins_job_name']
         description = request.POST['des']
-        if Project.objects.create(name = name, use_rc = use_rc, jenkins_job_name = jenkins_job_name, description = description):
+        repository = request.POST['repository']
+        if Project.objects.create(name = name, use_dm = use_dm, repository = repository, jenkins_job_name = jenkins_job_name, description = description):
             messages.success(request, "Create project %s success" % name)
         else:
             messages.error(request, "Create project %s failed" % name)
@@ -189,11 +190,12 @@ def project(request):
     if request.method == 'GET':
         if request.GET['action'] == 'list_project':
             data = Project.objects.all()
-            all_rc_info = kubernetes_api.get_replicationcontroller('All')
-            rcs = []
-            for rc in all_rc_info['items']:
-                rcs.append("%s (%s)" % (rc['metadata']['name'], rc['metadata']['namespace']))
-            return render(request, 'project.html', {'data': data, 'rcs': rcs, 'all_jenkins_jobs': jenkins_api.get_all_jobs()})
+            all_dm_info = kubernetes_api.get_deployment('All')
+            dms = []
+            for dm in all_dm_info['items']:
+                dms.append("%s (%s)" % (dm['metadata']['name'], dm['metadata']['namespace']))
+            repository = registry_api.get_repository_list()
+            return render(request, 'project.html', {'data': data, 'dms': dms, "repository": repository , 'all_jenkins_jobs': jenkins_api.get_all_jobs()})
         if request.GET['action'] == 'delete':
             delete_pro_id = request.GET['d_id']
             p = Project.objects.filter(id=delete_pro_id)
@@ -203,7 +205,16 @@ def project(request):
                 p.delete()
             else:
                 messages.warning(request, "Delete project %s failed, No project named %s" % (project_name, project_name))
-        return HttpResponseRedirect(request.META['HTTP_REFERER'])
+            return HttpResponseRedirect(request.META['HTTP_REFERER'])
+        elif request.GET['action'] == 'update':
+            project_id = request.GET['pro_id']
+            pro = Project.objects.filter(id=project_id)
+            repository = pro[0].repository
+            list_ = registry_api.get_repository_tags(repository)[-10:]
+            data = {}
+            for tag in list_:
+                data[tag] = registry_api.get_tag_create_time(repository, tag)
+            return render(request, 'deployment_update.html', {'data': data, 'repository': repository, 'pro_id': project_id} )
 
 
 @login_required()
@@ -213,3 +224,49 @@ def jenkins(request):
         jenkins_api.build_image(item_name)
         messages.info(request, "Start build %s" % item_name)
         return HttpResponseRedirect(request.META['HTTP_REFERER'])
+
+
+@login_required()
+def deployment(request):
+    if 'name' in request.GET:
+        name = request.GET['name']
+        all_dm_info = kubernetes_api.get_deployment('All')
+        for rc in all_dm_info['items']:
+            if rc['metadata']['name'] == name:
+                namespace = rc['metadata']['namespace']
+                break
+        else:
+            namespace = 'default'
+        decode_json  = kubernetes_api.get_one_deployment(namespace, name)
+        json_former = json.dumps(decode_json)
+        return render(request, 'json-show.html', {'page_name': "Deployments", 'json_data': json_former})
+    elif 'action' in request.GET and request.GET['action'] == 'update':
+        project_id = request.GET['pro_id']
+        repository = request.GET['repository']
+        tag = request.GET['tag']
+        new_image = "%s/%s:%s" % (registry_api.private, repository, tag)
+        pro = Project.objects.filter(id=project_id)
+        dm_namespace = pro[0].use_dm
+        m = re.match("(.*)\((.*)\)", dm_namespace)
+        if m:
+            dm = m.group(1)
+            namespace = m.group(2)
+        else:
+            return 'Get version error'
+        update_re = kubernetes_api.update_deployment(namespace, dm, new_image)
+        messages.success(request, "Rolling Update start")
+        return render(request, 'json-show.html', {'page_name': "%s Rolling Update Result" % dm,'json_data': update_re})
+    else:
+        namespace = request.session['namespace']
+        info = kubernetes_api.get_deployment(namespace)
+        print info
+        data = []
+        for dm in info['items']:
+            r = {}
+            r['replicas'] = dm['status']['replicas']
+            r['availableReplicas'] = dm['status']['availableReplicas']
+            r['updatedReplicas'] = dm['status']['updatedReplicas']
+            r['name'] = dm['metadata']['name']
+            r['creationTimestamp'] = dm['metadata']['creationTimestamp']
+            data.append(r)
+        return render(request, 'dm.html', {'data': data})

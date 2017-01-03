@@ -15,6 +15,7 @@ import urllib2
 import json
 
 registry="54.223.166.145:5000"
+private="172.31.14.229:5000"
 registry_url = "http://%s"%registry
 
 
@@ -64,3 +65,5 @@ def delete_tag(repository_name,tag):
     except urllib2.URLError, e:
         print e.reason
         return False
+
+print get_repository_tags("trading/trading-merge")[-10:]

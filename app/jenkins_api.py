@@ -38,11 +38,3 @@ def get_build_status_result(item_name, build_number):
 
 def get_all_jobs():
     return server.get_all_jobs()
-
-
-print is_or_not_in_building('trading-merge', 43)
-
-
-#print get_all_jobs()
-#print build_image('trading-merge')
-#print is_or_not_in_building('trading-merge',40)

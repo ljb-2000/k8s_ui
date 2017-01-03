@@ -51,14 +51,14 @@ def get_latest_build_re(item_name):
 
 
 @register.filter(name="get_using_version")
-def get_using_version(rc_namespace):
-    m = re.match("(.*)\((.*)\)", rc_namespace)
+def get_using_version(dm_namespace):
+    m = re.match("(.*)\((.*)\)", dm_namespace)
     if m:
         rc = m.group(1)
         namespace = m.group(2)
     else:
         return 'Get version error'
-    data = kubernetes_api.get_one_replicationcontroller(namespace, rc)
+    data = kubernetes_api.get_one_deployment(namespace, rc)
     image_url = data['spec']['template']['spec']['containers'][0]['image']
     m = re.match(".*:(.*)",image_url)
     if m:
