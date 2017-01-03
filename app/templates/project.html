@@ -72,6 +72,38 @@
       </div>
     </div>
     {# add project start end #}
+    {# scale start #}
+    <div class="modal fade" id="scale" tabindex="-1" role="dialog" aria-labelledby="myscale">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="myscale"><B>Scale</B></h4>
+          </div>
+          <div class="modal-body">
+            {# FROM #}
+            <form id="form" method="post" action="{% url 'dm' %}">
+                {% csrf_token %}
+                <fieldset>
+                    <div class="form-group">
+                        <label>Scale Number</label>
+                        <input type="number" class="form-control" name="new_scale">
+                        <input type="text" class="form-control" name="namespace" id="p_namespace" style="display: none">
+                        <input type="text" class="form-control" name="dm" id="p_dm" style="display: none">
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
+                        <button class="btn btn-primary">Create</button>
+                    </div>
+                </fieldset>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+    {# scale end #}
+        <button type="button" id="mybutton" class="btn btn-outline btn-primary" data-toggle="modal" data-target="#scale" style="display: none">Scale</button>
+
             <div class="row">
                 <div class="col-lg-12">
                     <div class="panel panel-default">
@@ -93,7 +125,7 @@
                                 </thead>
                                 <tbody>
                                 {% for pro in data %}
-                                    <tr class="odd gradeX">
+                                    <tr class="odd gradeX" id="{{ pro.id }}">
                                         <td>{{ pro.name }}</td>
                                         <td>{{ pro.use_dm }}</td>
                                         <td>{{ pro.jenkins_job_name }}</td>
@@ -106,6 +138,7 @@
                                             <a href="{% url 'project' %}?action=delete&d_id={{ pro.id }}"><button type="button" class="btn btn-outline btn-danger">Delete</button></a>
                                             {{ pro.jenkins_job_name | return_build_button | safe }}
                                             <a href="{% url 'project' %}?action=update&pro_id={{ pro.id }}"><button type="button" class="btn btn-outline btn-success">Update</button></a>
+                                            <button type="button" class="btn btn-outline btn-primary btn-edit" id="{{ pro.id }}">Scale</button>
                                         </td>
                                     </tr>
                                 {% endfor %}
@@ -130,6 +163,22 @@
     $(document).ready(function() {
         $('#dataTables-example').DataTable({
             responsive: true
+        });
+    });
+
+    $(document).ready(function(){
+        $(document).on('click','.btn-edit',function(){
+            var id = $(this).attr("id");
+            var tr = $("#"+id);
+            var dm_namespace = tr.find("td").eq(1).text();
+            var r = dm_namespace.match(/(.*) \((.*)\)/);
+            if ( r == null ){
+                return false
+            }
+            $('#p_namespace').val(r[2]);
+            $('#p_dm').val(r[1]);
+            $('#myscale').val(dm_namespace + '   Scale')
+            $("#mybutton").trigger("click");
         });
     });
     </script>

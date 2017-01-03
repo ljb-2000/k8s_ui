@@ -93,7 +93,6 @@ def update_deployment(namespace, dm, image):
         }
     ]
     post_data = json.dumps(data)
-    #url = "http://54.223.166.145:8081/apis/extensions/v1beta1/namespaces/trading/deployments/merger"
     url = "%s/namespaces/%s/deployments/%s" % (kubernetes_exten_apiserver, namespace, dm)
     req = urllib2.Request(url, post_data)
     req.get_method = lambda: 'PATCH'
@@ -113,3 +112,23 @@ def get_deployment(namespace):
 def get_one_deployment(namespace, dm):
     data = http_get(kubernetes_exten_apiserver + "/namespaces/%s/deployments/%s" % (namespace, dm))
     return data
+
+def deployment_scale(namespace, dm, new_scale):
+    data = [
+        {
+            "op" : "replace",
+            "path" : "/spec/replicas",
+            "value" : int(new_scale)
+        }
+    ]
+    post_data = json.dumps(data)
+    url = "%s/namespaces/%s/deployments/%s/scale" % (kubernetes_exten_apiserver, namespace, dm)
+    print url
+    req = urllib2.Request(url, post_data)
+    req.get_method = lambda: 'PATCH'
+    req.add_header("Content-Type","application/json-patch+json")
+    try:
+        resp = urllib2.urlopen(req)
+        return resp.read()
+    except Exception, e:
+        print Exception, e

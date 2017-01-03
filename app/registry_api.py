@@ -65,5 +65,3 @@ def delete_tag(repository_name,tag):
     except urllib2.URLError, e:
         print e.reason
         return False
-
-print get_repository_tags("trading/trading-merge")[-10:]

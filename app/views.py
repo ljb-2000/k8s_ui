@@ -228,45 +228,52 @@ def jenkins(request):
 
 @login_required()
 def deployment(request):
-    if 'name' in request.GET:
-        name = request.GET['name']
-        all_dm_info = kubernetes_api.get_deployment('All')
-        for rc in all_dm_info['items']:
-            if rc['metadata']['name'] == name:
-                namespace = rc['metadata']['namespace']
-                break
+    if request.method == 'GET':
+        if 'name' in request.GET:
+            name = request.GET['name']
+            all_dm_info = kubernetes_api.get_deployment('All')
+            for rc in all_dm_info['items']:
+                if rc['metadata']['name'] == name:
+                    namespace = rc['metadata']['namespace']
+                    break
+            else:
+                namespace = 'default'
+            decode_json  = kubernetes_api.get_one_deployment(namespace, name)
+            json_former = json.dumps(decode_json)
+            return render(request, 'json-show.html', {'page_name': "Deployments", 'json_data': json_former})
+        elif 'action' in request.GET and request.GET['action'] == 'update':
+            project_id = request.GET['pro_id']
+            repository = request.GET['repository']
+            tag = request.GET['tag']
+            new_image = "%s/%s:%s" % (registry_api.private, repository, tag)
+            pro = Project.objects.filter(id=project_id)
+            dm_namespace = pro[0].use_dm
+            m = re.match("(.*)\((.*)\)", dm_namespace)
+            if m:
+                dm = m.group(1)
+                namespace = m.group(2)
+            else:
+                return 'Get version error'
+            update_re = kubernetes_api.update_deployment(namespace, dm, new_image)
+            messages.success(request, "Rolling Update start")
+            return render(request, 'json-show.html', {'page_name': "%s Rolling Update Result" % dm,'json_data': update_re})
         else:
-            namespace = 'default'
-        decode_json  = kubernetes_api.get_one_deployment(namespace, name)
-        json_former = json.dumps(decode_json)
-        return render(request, 'json-show.html', {'page_name': "Deployments", 'json_data': json_former})
-    elif 'action' in request.GET and request.GET['action'] == 'update':
-        project_id = request.GET['pro_id']
-        repository = request.GET['repository']
-        tag = request.GET['tag']
-        new_image = "%s/%s:%s" % (registry_api.private, repository, tag)
-        pro = Project.objects.filter(id=project_id)
-        dm_namespace = pro[0].use_dm
-        m = re.match("(.*)\((.*)\)", dm_namespace)
-        if m:
-            dm = m.group(1)
-            namespace = m.group(2)
-        else:
-            return 'Get version error'
-        update_re = kubernetes_api.update_deployment(namespace, dm, new_image)
-        messages.success(request, "Rolling Update start")
-        return render(request, 'json-show.html', {'page_name': "%s Rolling Update Result" % dm,'json_data': update_re})
+            namespace = request.session['namespace']
+            info = kubernetes_api.get_deployment(namespace)
+            print info
+            data = []
+            for dm in info['items']:
+                r = {}
+                r['replicas'] = dm['status']['replicas']
+                r['availableReplicas'] = dm['status']['availableReplicas']
+                r['updatedReplicas'] = dm['status']['updatedReplicas']
+                r['name'] = dm['metadata']['name']
+                r['creationTimestamp'] = dm['metadata']['creationTimestamp']
+                data.append(r)
+            return render(request, 'dm.html', {'data': data})
     else:
-        namespace = request.session['namespace']
-        info = kubernetes_api.get_deployment(namespace)
-        print info
-        data = []
-        for dm in info['items']:
-            r = {}
-            r['replicas'] = dm['status']['replicas']
-            r['availableReplicas'] = dm['status']['availableReplicas']
-            r['updatedReplicas'] = dm['status']['updatedReplicas']
-            r['name'] = dm['metadata']['name']
-            r['creationTimestamp'] = dm['metadata']['creationTimestamp']
-            data.append(r)
-        return render(request, 'dm.html', {'data': data})
+        new_scale = request.POST['new_scale']
+        namespace = request.POST['namespace']
+        dm = request.POST['dm']
+        scale_re = kubernetes_api.deployment_scale(namespace, dm, new_scale)
+        return render(request, 'json-show.html', {'page_name': "%s Rolling Update Result" % dm,'json_data': scale_re})
