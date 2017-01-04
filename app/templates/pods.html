@@ -31,6 +31,7 @@
                                         <th>Labels</th>
                                         <th>Start_Time</th>
                                         <th>Status</th>
+                                        <th>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -44,6 +45,9 @@
                                         <td width="100">{% for key,value in pod.labels.items %}{{ key }} => {{ value }} </br>{% endfor %}</td>
                                         <td>{{ pod.startTime | get_cst_time }}</td>
                                         <td>{{ pod.phase }}</td>
+                                        <td>
+                                        <a href=""><button type="button" class="btn btn-outline btn-success">Connect</button></a>
+                                        </td>
                                     </tr>
                                 {% endfor %}
                                 </tbody>

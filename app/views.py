@@ -124,6 +124,7 @@ def pods(request):
     if 'action' in request.GET and request.GET['action'] == 'list_pods':
         namespace = request.session['namespace']
         info = kubernetes_api.get_pods(namespace)
+        print info
         data = []
         for pod in info['items']:
             p = {}
@@ -134,6 +135,7 @@ def pods(request):
             p['podIP'] = pod['status']['podIP']
             p['phase'] = pod['status']['phase']
             p['container_num'] = len(pod['status']['containerStatuses'])
+            p['container_id'] = pod['status']['containerStatuses']['containerID']
             p['images'] = ''
             for con in pod['status']['containerStatuses']:
                 p['images'] += "%s</br>" % con['image']
