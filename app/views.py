@@ -73,14 +73,23 @@ def repository(request):
         if 'action' in request.GET and request.GET['action'] == 'list_tags':
             repository = request.GET['repository']
             list_ = registry_api.get_repository_tags(repository)
-            data = {}
+            data = []
             for tag in list_:
-                data[tag] = registry_api.get_tag_create_time(repository, tag)
+                tag_info = {}
+                tag_info['tag'] = tag
+                tag_info['create_time'] = registry_api.get_tag_create_time(repository, tag)
+                f_re = Image.objects.filter(repository=repository, tag=tag)
+                if len(f_re) >= 1:
+                    tag_info['description'] = f_re[0].description
+                else:
+                    tag_info['description'] = ""
+                data.append(tag_info)
             return render(request, 'repository_manage.html', {'data': data, 'repository': repository})
         elif 'action' in request.GET and request.GET['action'] == 'delete_tag':
             repository = request.GET['repository']
             tag = request.GET['tag']
             if registry_api.delete_tag(repository, tag):
+                Image.objects.filter(repository=repository, tag=tag).delete()
                 messages.success(request, "删除%s的版本%s成功" % (repository, tag))
                 return HttpResponseRedirect(request.META['HTTP_REFERER'])
             else:
@@ -106,17 +115,28 @@ def repository(request):
                 data.append(r)
             return render(request, 'repository.html', {'data': data})
     else:
-        category = request.POST['category']
-        description = request.POST['description']
-        repository = request.POST['name']
-        f_re = Repository.objects.filter(name = repository)
-        if len(f_re) >= 1:
-            f_re.update(category=category, description=description)
-        else:
-            f_re.create(name=repository, category=category, description=description)
-        Repository.objects.update_or_create(name=repository, category=category, description=description, defaults={'name': repository})
-        messages.success(request, "%s saved success" % repository)
-        return HttpResponseRedirect(request.META['HTTP_REFERER'])
+        if 'category' in request.POST:   #modify repository info
+            category = request.POST['category']
+            description = request.POST['description']
+            repository = request.POST['name']
+            f_re = Repository.objects.filter(name = repository)
+            if len(f_re) >= 1:
+                f_re.update(category=category, description=description)
+            else:
+                Repository.objects.create(name=repository, category=category, description=description)
+            messages.success(request, "%s saved success" % repository)
+            return HttpResponseRedirect(request.META['HTTP_REFERER'])
+        else:  #modify image info
+            description = request.POST['description']
+            repository = request.POST['name']
+            tag = request.POST['tag']
+            f_re = Image.objects.filter(repository=repository, tag=tag)
+            if len(f_re) >= 1:
+                f_re.update(description=description)
+            else:
+                Image.objects.create(repository=repository,tag=tag,description=description)
+            messages.success(request, "%s %s saved success" % (repository, tag))
+            return HttpResponseRedirect(request.META['HTTP_REFERER'])
 
 
 @login_required()
@@ -124,7 +144,6 @@ def pods(request):
     if 'action' in request.GET and request.GET['action'] == 'list_pods':
         namespace = request.session['namespace']
         info = kubernetes_api.get_pods(namespace)
-        print info
         data = []
         for pod in info['items']:
             p = {}
@@ -135,7 +154,7 @@ def pods(request):
             p['podIP'] = pod['status']['podIP']
             p['phase'] = pod['status']['phase']
             p['container_num'] = len(pod['status']['containerStatuses'])
-            p['container_id'] = pod['status']['containerStatuses']['containerID']
+            p['container_id'] = pod['status']['containerStatuses'][0]['containerID'][9:21]
             p['images'] = ''
             for con in pod['status']['containerStatuses']:
                 p['images'] += "%s</br>" % con['image']
@@ -146,6 +165,7 @@ def pods(request):
         podname = request.GET['podname']
         data = kubernetes_api.get_pod_log(namespace, podname)
         return HttpResponse("<pre>" + data + "</pre>")
+
 
 @login_required()
 def replicationcontroller(request):
@@ -184,7 +204,12 @@ def project(request):
         jenkins_job_name = request.POST['jenkins_job_name']
         description = request.POST['des']
         repository = request.POST['repository']
-        if Project.objects.create(name = name, use_dm = use_dm, repository = repository, jenkins_job_name = jenkins_job_name, description = description):
+        if Project.objects.create(
+                name= name,
+                use_dm= use_dm,
+                repository= repository,
+                jenkins_job_name= jenkins_job_name,
+                description= description):
             messages.success(request, "Create project %s success" % name)
         else:
             messages.error(request, "Create project %s failed" % name)
@@ -262,7 +287,6 @@ def deployment(request):
         else:
             namespace = request.session['namespace']
             info = kubernetes_api.get_deployment(namespace)
-            print info
             data = []
             for dm in info['items']:
                 r = {}

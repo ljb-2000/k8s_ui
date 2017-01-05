@@ -46,7 +46,7 @@
                                         <td>{{ pod.startTime | get_cst_time }}</td>
                                         <td>{{ pod.phase }}</td>
                                         <td>
-                                        <a href=""><button type="button" class="btn btn-outline btn-success">Connect</button></a>
+                                        <a href="http://54.223.166.145:4200/domeos@{{ pod.nodeName }}@{{ pod.container_id }}@/" target="_blank"><button type="button" class="btn btn-outline btn-success">Connect</button></a>
                                         </td>
                                     </tr>
                                 {% endfor %}

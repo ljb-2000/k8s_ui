@@ -12,6 +12,45 @@
 {% block page_name %}Repository <font color="#008b8b">{{ repository }}</font> Tags{% endblock %}
 
 {% block content %}
+    {# edit start #}
+    <div class="modal fade" id="edit" tabindex="-1" role="dialog" aria-labelledby="myedit">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="myedit"><B>Edit</B></h4>
+          </div>
+          <div class="modal-body">
+            {# FROM #}
+            <form id="form" method="post" action="{% url 'repository' %}">
+                {% csrf_token %}
+                <fieldset>
+                    <div class="form-group">
+                        <label>Repository</label>
+                        <input type="text" class="form-control" name="name" id="repository" readonly="readonly" value="{{ repository }}">
+                    </div>
+                    <div class="form-group">
+                        <label>Tag</label>
+                        <input type="text" class="form-control" name="tag" id="tag" readonly="readonly">
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+{#                        <input type="text" class="form-control" name="description">#}
+                          <textarea class="form-control" rows="5" name="description"></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
+                        <button class="btn btn-primary">Update</button>
+                    </div>
+                </fieldset>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+    <button type="button" id="mybutton" class="btn btn-outline btn-primary" data-toggle="modal" data-target="#edit" style="display: none">Edit</button>
+    {# edit end #}
+
             <div class="row">
                 <div class="col-lg-12">
                     <div class="panel panel-default">
@@ -25,15 +64,20 @@
                                     <tr>
                                         <th>Tag</th>
                                         <th>Create Time</th>
+                                        <th>Description</th>
                                         <th>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                {% for r,t in data.items %}
-                                    <tr class="odd gradeX">
-                                        <td>{{ r }}</td>
-                                        <td>{{ t | get_cst_time }}</td>
-                                        <td><a href="{% url 'repository' %}?action=delete_tag&repository={{ repository }}&tag={{ r }}"><button type="button" class="btn btn-outline btn-danger">Delete</button></a></td>
+                                {% for tag_info in data %}
+                                    <tr class="odd gradeX" id="{{ tag_info.tag }}">
+                                        <td>{{ tag_info.tag }}</td>
+                                        <td>{{ tag_info.create_time | get_cst_time }}</td>
+                                        <td>{{ tag_info.description }}</td>
+                                        <td>
+                                            <button type="button" class="btn btn-outline btn-primary btn-edit" id="{{ tag_info.tag }}">Edit</button>
+                                            <a href="{% url 'repository' %}?action=delete_tag&repository={{ repository }}&tag={{ tag_info.tag }}"><button type="button" class="btn btn-outline btn-danger">Delete</button></a>
+                                        </td>
                                     </tr>
                                 {% endfor %}
                                 </tbody>
@@ -57,6 +101,15 @@
     $(document).ready(function() {
         $('#dataTables-example').DataTable({
             responsive: true
+        });
+    });
+
+    $(document).ready(function(){
+        $(document).on('click','.btn-edit',function(){
+            var id = $(this).attr("id");
+            var tr = $("#"+id);
+            $('#tag').val(id);
+            $("#mybutton").trigger("click");
         });
     });
     </script>
